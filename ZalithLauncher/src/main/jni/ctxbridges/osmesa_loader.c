@@ -18,6 +18,7 @@ void (*OSMesaFlushFrontbuffer_p) ();
 void (*OSMesaPixelStore_p) (GLint pname, GLint value);
 GLubyte* (*glGetString_p) (GLenum name);
 void (*glFinish_p) (void);
+void (*glFlush_p) (void);
 void (*glClearColor_p) (GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 void (*glClear_p) (GLbitfield mask);
 void (*glReadPixels_p) (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* data);
@@ -68,6 +69,7 @@ void dlsym_OSMesa() {
     glClearColor_p = OSMGetProcAddress(dl_handle, "glClearColor");
     glClear_p = OSMGetProcAddress(dl_handle, "glClear");
     glFinish_p = OSMGetProcAddress(dl_handle, "glFinish");
+    glFlush_p = OSMGetProcAddress(dl_handle, "glFlush");
     glReadPixels_p = OSMGetProcAddress(dl_handle, "glReadPixels");
     glReadBuffer_p = OSMGetProcAddress(dl_handle, "glReadBuffer");
 
