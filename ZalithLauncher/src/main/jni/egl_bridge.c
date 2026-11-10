@@ -247,25 +247,32 @@ EXTERNAL_API void* pojavCreateContext(void* contextSrc) {
 }
 
 void* maybe_load_vulkan() {
-    // We use the env var because
-    // 1. it's easier to do that
-    // 2. it won't break if something will try to load vulkan and osmesa simultaneously
     if(getenv("VULKAN_PTR") == NULL) load_vulkan();
     return (void*) strtoul(getenv("VULKAN_PTR"), NULL, 0x10);
 }
 
 static int frameCount = 0;
 static int fps = 0;
-static time_t lastTime = 0;
+static uint64_t lastNanoTime = 0;
+
+static inline uint64_t get_monotonic_coarse_ns() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC_COARSE, &ts);
+    return ((uint64_t)ts.tv_sec * 1000000000ULL) + (uint64_t)ts.tv_nsec;
+}
 
 void calculateFPS() {
     frameCount++;
-    time_t currentTime = time(NULL);
-
-    if (currentTime != lastTime) {
-        lastTime = currentTime;
-        fps = frameCount;
-        frameCount = 0;
+    // Amostragem periodica a cada 8 quadros para reduzir overhead na thread grafica
+    if ((frameCount & 0x7) == 0) {
+        uint64_t currentNano = get_monotonic_coarse_ns();
+        if (lastNanoTime == 0) {
+            lastNanoTime = currentNano;
+        } else if (currentNano - lastNanoTime >= 1000000000ULL) {
+            fps = (int)((frameCount * 1000000000ULL) / (currentNano - lastNanoTime));
+            frameCount = 0;
+            lastNanoTime = currentNano;
+        }
     }
 }
 
@@ -293,4 +300,3 @@ EXTERNAL_API void pojavSwapInterval(int interval) {
     }
 
 }
-
