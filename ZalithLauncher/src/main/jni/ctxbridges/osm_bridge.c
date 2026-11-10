@@ -5,6 +5,8 @@
 #include <string.h>
 #include <environ/environ.h>
 #include <android/log.h>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include "osm_bridge.h"
 
 static const char* g_LogTag = "GLBridge";
@@ -12,6 +14,12 @@ static __thread osm_render_window_t* currentBundle;
 // a tiny buffer for rendering when there's nowhere t render
 static char no_render_buffer[4];
 static bool hasSetNoRendererBuffer = false;
+
+// Dynamic EGL fence sync function pointers
+static PFNEGLCREATESYNCKHRPROC osm_eglCreateSyncKHR = NULL;
+static PFNEGLDESTROYSYNCKHRPROC osm_eglDestroySyncKHR = NULL;
+static PFNEGLCLIENTWAITSYNCKHRPROC osm_eglClientWaitSyncKHR = NULL;
+static bool osm_sync_initialized = false;
 
 // Its not in a .h file because it is not supposed to be used outsife of this file.
 void setNativeWindowSwapInterval(struct ANativeWindow* nativeWindow, int swapInterval);
@@ -126,7 +134,38 @@ void osm_swap_buffers() {
             osm_release_window();
 
     osm_apply_current_ll();
-    glFinish_p(); // this will force osmesa to write the last rendered image into the buffer
+
+    // Experimental switch: POJAV_EXPERIMENTAL_FENCE_SYNC
+    const char* exp_sync = getenv("POJAV_EXPERIMENTAL_FENCE_SYNC");
+    bool use_fence = (exp_sync != NULL && strcmp(exp_sync, "0") != 0 && strcmp(exp_sync, "false") != 0);
+
+    if (use_fence) {
+        if (!osm_sync_initialized) {
+            osm_eglCreateSyncKHR = (PFNEGLCREATESYNCKHRPROC)eglGetProcAddress("eglCreateSyncKHR");
+            osm_eglDestroySyncKHR = (PFNEGLDESTROYSYNCKHRPROC)eglGetProcAddress("eglDestroySyncKHR");
+            osm_eglClientWaitSyncKHR = (PFNEGLCLIENTWAITSYNCKHRPROC)eglGetProcAddress("eglClientWaitSyncKHR");
+            osm_sync_initialized = true;
+        }
+
+        EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        if (osm_eglCreateSyncKHR && dpy != EGL_NO_DISPLAY) {
+            EGLSyncKHR sync = osm_eglCreateSyncKHR(dpy, EGL_SYNC_FENCE_KHR, NULL);
+            glFlush_p();
+            if (sync != EGL_NO_SYNC_KHR) {
+                if (osm_eglClientWaitSyncKHR) {
+                    osm_eglClientWaitSyncKHR(dpy, sync, 0, 0);
+                }
+                if (osm_eglDestroySyncKHR) {
+                    osm_eglDestroySyncKHR(dpy, sync);
+                }
+            }
+        } else {
+            glFlush_p();
+        }
+    } else {
+        // Fallback padrao seguro se o switch estiver desativado
+        glFinish_p();
+    }
 
     if(currentBundle->nativeSurface != NULL && !currentBundle->disable_rendering)
         if(ANativeWindow_unlockAndPost(currentBundle->nativeSurface) != 0)
