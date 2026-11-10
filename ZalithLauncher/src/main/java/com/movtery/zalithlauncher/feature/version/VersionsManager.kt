@@ -10,6 +10,7 @@ import com.movtery.zalithlauncher.feature.customprofilepath.ProfilePathHome
 import com.movtery.zalithlauncher.feature.log.Logging
 import com.movtery.zalithlauncher.feature.version.favorites.FavoritesVersionUtils
 import com.movtery.zalithlauncher.feature.version.utils.VersionInfoUtils
+import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.task.Task
 import com.movtery.zalithlauncher.task.TaskExecutors
 import com.movtery.zalithlauncher.ui.dialog.EditTextDialog
@@ -19,6 +20,7 @@ import com.movtery.zalithlauncher.utils.stringutils.SortStrings
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -43,8 +45,17 @@ object VersionsManager {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + CoroutineName("VersionsManager"))
     private val refreshMutex = Mutex()
+    @Volatile
     private var isRefreshing: Boolean = false
+    @Volatile
     private var lastRefreshTime = 0L
+
+    // Throttle/debounce state (guarded by throttleLock)
+    private const val REFRESH_THROTTLE_MS = 500L
+    private val throttleLock = Any()
+    private var throttleScheduled = false
+    private var pendingRefresh = false
+    private var pendingRefreshInfo = false
 
     /**
      * @return 检查是否可以刷新
@@ -74,10 +85,56 @@ object VersionsManager {
      */
     fun refresh(tag: String, refreshVersionInfo: Boolean = false) {
         Logging.i("VersionsManager", "$tag initiated the refresh version task")
+        if (!AllSettings.refreshThrottle.getValue()) {
+            // Original behavior: every request runs a full scan (serialized by the mutex)
+            coroutineScope.launch {
+                refreshMutex.withLock {
+                    lastRefreshTime = ZHTools.getCurrentTimeMillis()
+                    handleRefreshOperation(refreshVersionInfo)
+                }
+            }
+            return
+        }
+
+        // Debounced behavior: collapse bursts of requests (e.g. onResume storms) into a
+        // single trailing refresh, without ever dropping the final request.
+        synchronized(throttleLock) {
+            pendingRefresh = true
+            if (refreshVersionInfo) pendingRefreshInfo = true
+            if (throttleScheduled) return
+            throttleScheduled = true
+        }
+
         coroutineScope.launch {
-            refreshMutex.withLock {
-                lastRefreshTime = ZHTools.getCurrentTimeMillis()
-                handleRefreshOperation(refreshVersionInfo)
+            while (true) {
+                val waitMs = synchronized(throttleLock) {
+                    if (!pendingRefresh) {
+                        // Atomic with the pending check: no request can be lost here
+                        throttleScheduled = false
+                        return@launch
+                    }
+                    val sinceLast = ZHTools.getCurrentTimeMillis() - lastRefreshTime
+                    (REFRESH_THROTTLE_MS - sinceLast).coerceAtLeast(0L)
+                }
+                if (waitMs > 0) delay(waitMs)
+
+                val request: Boolean? = synchronized(throttleLock) {
+                    if (!pendingRefresh) {
+                        // Atomic with the pending check: no request can be lost here
+                        throttleScheduled = false
+                        return@launch
+                    }
+                    pendingRefresh = false
+                    val info = pendingRefreshInfo
+                    pendingRefreshInfo = false
+                    info
+                }
+                if (request != null) {
+                    refreshMutex.withLock {
+                        lastRefreshTime = ZHTools.getCurrentTimeMillis()
+                        handleRefreshOperation(request)
+                    }
+                }
             }
         }
     }

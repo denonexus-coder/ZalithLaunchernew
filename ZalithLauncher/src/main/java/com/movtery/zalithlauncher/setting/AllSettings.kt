@@ -191,6 +191,22 @@ class AllSettings {
         @JvmStatic
         val tcVibrateDuration = IntSettingUnit("tcVibrateDuration", 100)
 
+        // Performance (bench-verified optimizations, each individually switchable)
+        @JvmStatic
+        val fastFileVerify = BooleanSettingUnit("fastFileVerify", true)
+
+        @JvmStatic
+        val fastModParse = BooleanSettingUnit("fastModParse", true)
+
+        @JvmStatic
+        val refreshThrottle = BooleanSettingUnit("refreshThrottle", true)
+
+        @JvmStatic
+        val versionInfoCache = BooleanSettingUnit("versionInfoCache", true)
+
+        @JvmStatic
+        val logBufferedOutput = BooleanSettingUnit("logBufferedOutput", true)
+
         // Other
         @JvmStatic
         val currentAccount = StringSettingUnit("currentAccount", "")

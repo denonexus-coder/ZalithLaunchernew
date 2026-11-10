@@ -3,6 +3,7 @@ package com.movtery.zalithlauncher.feature.log
 import android.util.Log
 import com.movtery.zalithlauncher.BuildConfig
 import com.movtery.zalithlauncher.InfoDistributor
+import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.utils.path.PathManager.Companion.DIR_LAUNCHER_LOG
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,10 @@ object Logging {
     @Volatile
     private var isLauncherInfoWritten = false
     private var FILE_LAUNCHER_LOG: File? = null
+
+    // Reusable writer (logBufferedOutput): avoids open/close per line
+    private var openWriter: BufferedWriter? = null
+    private var openWriterFile: File? = null
 
     init {
         FILE_LAUNCHER_LOG = getLogFile()
@@ -70,22 +75,48 @@ object Logging {
         }
     }
 
+    private fun closeWriter() {
+        runCatching { openWriter?.close() }
+        openWriter = null
+        openWriterFile = null
+    }
+
     private suspend fun appendToFile(string: String) {
         loggerMutex.withLock {
             runCatching {
                 FILE_LAUNCHER_LOG?.let { file ->
                     if (file.exists() && file.length() >= 15 * 1024 * 1024) { // 15MB
+                        closeWriter()
                         FILE_LAUNCHER_LOG = getLogFile()
                         isLauncherInfoWritten = false
                     }
                 }
 
-                BufferedWriter(FileWriter(FILE_LAUNCHER_LOG, true)).use { writer ->
+                val target = FILE_LAUNCHER_LOG ?: return@runCatching
+
+                if (AllSettings.logBufferedOutput.getValue()) {
+                    // Keep a single writer open instead of reopening the file per line
+                    if (openWriter == null || openWriterFile != target || !target.exists()) {
+                        closeWriter()
+                        openWriter = BufferedWriter(FileWriter(target, true))
+                        openWriterFile = target
+                    }
+                    val writer = openWriter ?: return@runCatching
                     if (!isLauncherInfoWritten) {
                         isLauncherInfoWritten = true
                         writer.append(getLauncherInfo()).append("\r\n\r\n")
                     }
                     writer.append(string).append("\r\n")
+                    writer.flush()
+                } else {
+                    closeWriter()
+                    BufferedWriter(FileWriter(target, true)).use { writer ->
+                        if (!isLauncherInfoWritten) {
+                            isLauncherInfoWritten = true
+                            writer.append(getLauncherInfo()).append("\r\n\r\n")
+                        }
+                        writer.append(string).append("\r\n")
+                    }
                 }
             }.getOrElse { e ->
                 Log.e("Logging", "Failed to write log: ${Tools.printToString(e)}")

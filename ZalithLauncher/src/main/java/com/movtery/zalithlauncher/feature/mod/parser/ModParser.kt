@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken
 import com.moandjiezana.toml.Toml
 import com.movtery.zalithlauncher.feature.log.Logging
 import com.movtery.zalithlauncher.feature.version.Version
+import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.task.Task
 import com.movtery.zalithlauncher.utils.file.FileTools
 import com.movtery.zalithlauncher.utils.path.PathManager
@@ -60,6 +61,15 @@ class ModParser {
                     ?: return@runTask
 
                 val existingCache = loadCache(gson, infoCacheFile)
+                // Fast path index: statKey -> cache entry (only when fastModParse is on)
+                val statIndex: Map<String, ModInfoCache> =
+                    if (AllSettings.fastModParse.getValue()) {
+                        existingCache.values
+                            .filter { !it.statKey.isNullOrEmpty() }
+                            .associateBy { it.statKey!! }
+                    } else {
+                        emptyMap()
+                    }
 
                 runBlocking {
                     val optimalThreads = calculateOptimalThreads(files.size)
@@ -69,7 +79,7 @@ class ModParser {
                         val deferredList = batch.map { file ->
                             async(Dispatchers.IO) {
                                 semaphore.withPermit {
-                                    parseModFile(file, files.size, existingCache, newCacheMap, modInfoQueue, listener)
+                                    parseModFile(file, files.size, existingCache, statIndex, newCacheMap, modInfoQueue, listener)
                                 }
                             }
                         }
@@ -90,26 +100,44 @@ class ModParser {
         modFile: File,
         totalCount: Int,
         existingCache: Map<String, ModInfoCache>,
+        statIndex: Map<String, ModInfoCache>,
         newCache: MutableMap<String, ModInfoCache>,
         modQueue: ConcurrentLinkedQueue<ModInfo>,
         listener: ModParserListener
     ) {
+        // Fast path: unchanged name+size+mtime -> reuse cached info without hashing the jar
+        val statKey = if (AllSettings.fastModParse.getValue()) statKeyOf(modFile) else null
+        if (statKey != null) {
+            statIndex[statKey]?.let { cached ->
+                val modInfo = cached.modInfo.apply { file = modFile }
+                modQueue.add(modInfo)
+                listener.onProgress(modInfo, totalCount)
+                newCache[cached.fileHash] = cached
+                return
+            }
+        }
+
         val fileHash = FileTools.calculateFileHash(modFile)
 
         existingCache[fileHash]?.let { cached ->
             val modInfo = cached.modInfo.apply { file = modFile }
             modQueue.add(modInfo)
             listener.onProgress(modInfo, totalCount)
-            newCache[fileHash] = cached
+            // Refresh the stat key so the next parse can skip hashing entirely
+            newCache[fileHash] =
+                if (statKey == null || cached.statKey == statKey) cached
+                else cached.copy(statKey = statKey)
             return
         }
 
         parseModContents(modFile)?.let { modInfo ->
             modQueue.add(modInfo)
             listener.onProgress(modInfo, totalCount)
-            newCache[fileHash] = ModInfoCache(fileHash, modInfo)
+            newCache[fileHash] = ModInfoCache(fileHash, modInfo, statKey)
         }
     }
+
+    private fun statKeyOf(file: File): String = "${file.name}|${file.length()}|${file.lastModified()}"
 
     private fun parseModContents(modFile: File): ModInfo? {
         return try {

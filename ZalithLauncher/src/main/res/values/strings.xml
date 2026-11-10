@@ -484,6 +484,17 @@
     <string name="setting_shader_dump_desc">Logs converted shaders to a log file</string>
     <string name="setting_force_big_core_title">Force Renderer to Run on Big Core</string>
     <string name="setting_force_big_core_desc">Forces the Minecraft rendering thread to run on the highest frequency core</string>
+    <string name="setting_category_performance">Performance (Experimental)</string>
+    <string name="setting_fast_file_verify_title">Fast File Verification</string>
+    <string name="setting_fast_file_verify_desc">Skip re-hashing unchanged game files using a size + modification time manifest (a full re-hash runs automatically every 10 launches)</string>
+    <string name="setting_fast_mod_parse_title">Fast Mod Parsing</string>
+    <string name="setting_fast_mod_parse_desc">Reuse cached mod information when the mod file size and modification time are unchanged, instead of hashing every mod jar</string>
+    <string name="setting_refresh_throttle_title">Throttle Version List Refresh</string>
+    <string name="setting_refresh_throttle_desc">Coalesce repeated version list refresh requests (e.g. returning to the launcher) into a single refresh</string>
+    <string name="setting_version_info_cache_title">Cache Version Info In Memory</string>
+    <string name="setting_version_info_cache_desc">Keep parsed version metadata in memory to avoid repeated disk reads while sorting and displaying the version list</string>
+    <string name="setting_log_buffered_title">Buffered Log Writing</string>
+    <string name="setting_log_buffered_desc">Keep the log file open instead of reopening it for every line</string>
     <string name="setting_touch_controller_vibrate_duration_title">TouchController Mod Vibration Duration</string>
     <string name="setting_touch_controller_vibrate_duration_desc">Set the vibration duration for this mod to suit different usage needs.</string>
     <string name="setting_verify_manifest_title">Game Version List Check</string>

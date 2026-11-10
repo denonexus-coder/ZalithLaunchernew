@@ -101,6 +101,200 @@
         </androidx.appcompat.widget.LinearLayoutCompat>
 
         <androidx.appcompat.widget.LinearLayoutCompat
+            android:id="@+id/perf_category"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:background="@drawable/background_card"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/_2sdp"
+            android:paddingVertical="@dimen/_12sdp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/_12sdp"
+                android:text="@string/setting_category_performance"
+                android:textColor="@color/settings_category" />
+
+            <com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout
+                android:id="@+id/fast_file_verify_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="@dimen/_12sdp">
+
+                <TextView
+                    android:id="@+id/fast_file_verify_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/fast_file_verify"
+                    android:text="@string/setting_fast_file_verify_title"
+                    android:textColor="@color/black_or_white" />
+
+                <TextView
+                    android:id="@+id/fast_file_verify_summary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/fast_file_verify_title"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/fast_file_verify"
+                    android:text="@string/setting_fast_file_verify_desc" />
+
+                <Switch
+                    android:id="@+id/fast_file_verify"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout>
+
+            <com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout
+                android:id="@+id/fast_mod_parse_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="@dimen/_12sdp">
+
+                <TextView
+                    android:id="@+id/fast_mod_parse_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/fast_mod_parse"
+                    android:text="@string/setting_fast_mod_parse_title"
+                    android:textColor="@color/black_or_white" />
+
+                <TextView
+                    android:id="@+id/fast_mod_parse_summary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/fast_mod_parse_title"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/fast_mod_parse"
+                    android:text="@string/setting_fast_mod_parse_desc" />
+
+                <Switch
+                    android:id="@+id/fast_mod_parse"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout>
+
+            <com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout
+                android:id="@+id/refresh_throttle_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="@dimen/_12sdp">
+
+                <TextView
+                    android:id="@+id/refresh_throttle_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/refresh_throttle"
+                    android:text="@string/setting_refresh_throttle_title"
+                    android:textColor="@color/black_or_white" />
+
+                <TextView
+                    android:id="@+id/refresh_throttle_summary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/refresh_throttle_title"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/refresh_throttle"
+                    android:text="@string/setting_refresh_throttle_desc" />
+
+                <Switch
+                    android:id="@+id/refresh_throttle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout>
+
+            <com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout
+                android:id="@+id/version_info_cache_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="@dimen/_12sdp">
+
+                <TextView
+                    android:id="@+id/version_info_cache_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/version_info_cache"
+                    android:text="@string/setting_version_info_cache_title"
+                    android:textColor="@color/black_or_white" />
+
+                <TextView
+                    android:id="@+id/version_info_cache_summary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/version_info_cache_title"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/version_info_cache"
+                    android:text="@string/setting_version_info_cache_desc" />
+
+                <Switch
+                    android:id="@+id/version_info_cache"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout>
+
+            <com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout
+                android:id="@+id/log_buffered_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="@dimen/_12sdp">
+
+                <TextView
+                    android:id="@+id/log_buffered_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/log_buffered"
+                    android:text="@string/setting_log_buffered_title"
+                    android:textColor="@color/black_or_white" />
+
+                <TextView
+                    android:id="@+id/log_buffered_summary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/log_buffered_title"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="@dimen/_8sdp"
+                    android:layout_toStartOf="@+id/log_buffered"
+                    android:text="@string/setting_log_buffered_desc" />
+
+                <Switch
+                    android:id="@+id/log_buffered"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </com.movtery.zalithlauncher.ui.layout.AnimRelativeLayout>
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/support_category"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

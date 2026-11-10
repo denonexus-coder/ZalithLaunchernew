@@ -42,6 +42,41 @@ class ExperimentalSettingsFragment :
             binding.bigCoreAffinity
         )
 
+        SwitchSettingsWrapper(
+            context,
+            AllSettings.fastFileVerify,
+            binding.fastFileVerifyLayout,
+            binding.fastFileVerify
+        )
+
+        SwitchSettingsWrapper(
+            context,
+            AllSettings.fastModParse,
+            binding.fastModParseLayout,
+            binding.fastModParse
+        )
+
+        SwitchSettingsWrapper(
+            context,
+            AllSettings.refreshThrottle,
+            binding.refreshThrottleLayout,
+            binding.refreshThrottle
+        )
+
+        SwitchSettingsWrapper(
+            context,
+            AllSettings.versionInfoCache,
+            binding.versionInfoCacheLayout,
+            binding.versionInfoCache
+        )
+
+        SwitchSettingsWrapper(
+            context,
+            AllSettings.logBufferedOutput,
+            binding.logBufferedLayout,
+            binding.logBuffered
+        )
+
         SeekBarSettingsWrapper(
             context,
             AllSettings.tcVibrateDuration,

@@ -7,6 +7,7 @@ import com.kdt.mcgui.ProgressLayout;
 import com.movtery.zalithlauncher.R;
 import com.movtery.zalithlauncher.feature.customprofilepath.ProfilePathHome;
 import com.movtery.zalithlauncher.feature.log.Logging;
+import com.movtery.zalithlauncher.feature.verify.FileVerifyCache;
 import com.movtery.zalithlauncher.setting.AllSettings;
 import com.movtery.zalithlauncher.task.Task;
 import com.movtery.zalithlauncher.utils.path.PathManager;
@@ -62,7 +63,12 @@ public class MinecraftDownloader {
                       @NonNull String realVersion, // this was there for a reason
                       @NonNull AsyncMinecraftDownloader.DoneListener listener) {
         Task.runTask(() -> {
-            downloadGame(version, realVersion);
+            FileVerifyCache.beginPass();
+            try {
+                downloadGame(version, realVersion);
+            } finally {
+                FileVerifyCache.endPass();
+            }
             listener.onDownloadDone();
             return null;
         }).onThrowable(listener::onDownloadFailed)
@@ -471,6 +477,12 @@ public class MinecraftDownloader {
 
         private void runCatching() throws Exception {
             if(mDownloadClass == DownloadMirror.DOWNLOAD_CLASS_LIBRARIES && !Tools.isValidString(mTargetSha1)) {
+                // Fast path: if the stat of this library is unchanged since its last
+                // successful verification, skip both the .sha1 network fetch and the hash.
+                if(FileVerifyCache.isFresh(mTargetPath)) {
+                    finishWithoutDownloading();
+                    return;
+                }
                 // If we're downloading a library, try to get sha1 since it might be available as a file
                 tryGetLibrarySha1();
             }
@@ -485,13 +497,21 @@ public class MinecraftDownloader {
         }
         
         private void verifyFileSha1() throws Exception {
-            if(mTargetPath.isFile() && mTargetPath.canRead() && Tools.compareSHA1(mTargetPath, mTargetSha1)) {
-                finishWithoutDownloading();
-            } else {
-                // Rely on the download function to throw an IOE in case if the file is not
-                // writable/not a file/etc...
-                downloadFile();
+            if(mTargetPath.isFile() && mTargetPath.canRead()) {
+                // Fast path: unchanged size+mtime since last full verification -> skip hashing
+                if(FileVerifyCache.shouldSkip(mTargetPath, mTargetSha1)) {
+                    finishWithoutDownloading();
+                    return;
+                }
+                if(Tools.compareSHA1(mTargetPath, mTargetSha1)) {
+                    FileVerifyCache.record(mTargetPath, mTargetSha1);
+                    finishWithoutDownloading();
+                    return;
+                }
             }
+            // Rely on the download function to throw an IOE in case if the file is not
+            // writable/not a file/etc...
+            downloadFile();
         }
         
         private void downloadFile() throws Exception {
@@ -501,6 +521,8 @@ public class MinecraftDownloader {
                             getLocalBuffer(), this);
                     return null;
                 });
+                // The file was just downloaded and hash-verified: remember it
+                FileVerifyCache.record(mTargetPath, mTargetSha1);
             }catch (Exception e) {
                 if(!mSkipIfFailed) throw e;
             }

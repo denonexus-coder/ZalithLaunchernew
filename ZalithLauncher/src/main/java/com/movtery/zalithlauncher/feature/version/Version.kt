@@ -34,6 +34,16 @@ class Version(
     var modCheckResult: ModChecker.ModCheckResult? = null
 
     /**
+     * In-memory VersionInfo cache (avoids re-reading VersionInfo.json on every
+     * sort comparison / list bind). Version objects are recreated on every
+     * VersionsManager.refresh(), so the cache cannot go stale across refreshes.
+     */
+    @Transient
+    private var cachedVersionInfo: VersionInfo? = null
+    @Transient
+    private var versionInfoCached: Boolean = false
+
+    /**
      * @return 获取版本所属的版本文件夹
      */
     fun getVersionsFolder(): String = versionsFolder
@@ -93,6 +103,17 @@ class Version(
         .replace("[zl_version]", ZHTools.getVersionName())
 
     fun getVersionInfo(): VersionInfo? {
+        if (!AllSettings.versionInfoCache.getValue()) {
+            return readVersionInfo()
+        }
+        if (!versionInfoCached) {
+            versionInfoCached = true
+            cachedVersionInfo = readVersionInfo()
+        }
+        return cachedVersionInfo
+    }
+
+    private fun readVersionInfo(): VersionInfo? {
         return runCatching {
             val infoFile = File(VersionsManager.getZalithVersionPath(this), "VersionInfo.json")
             Tools.GLOBAL_GSON.fromJson(Tools.read(infoFile), VersionInfo::class.java)
